@@ -1,7 +1,10 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
 
-# Specify your gem's dependencies in keycloak_user.gemspec
+source 'https://rubygems.org'
+
+# Specify your gem's dependencies in skeleton_key.gemspec
 gemspec
 
-gem "rake", "~> 12.0"
-gem "rspec", "~> 3.0"
+gem 'rake', '~> 12.0'
+gem 'rspec', '~> 3.0'
+gem 'keycloak', git: 'https://github.com/arthurstomp/keycloak'
