@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     skeleton_key (0.1.0)
-      keycloak
+      keycloak (>= 3.2.1)
 
 GEM
   remote: https://rubygems.org/
