@@ -1,16 +1,8 @@
-GIT
-  remote: https://github.com/arthurstomp/keycloak
-  revision: d4560cb980a74e4ab47da01771037f19a9416c20
-  specs:
-    keycloak (3.2.1)
-      json (= 2.3.0)
-      jwt (= 2.2.1)
-      rest-client (= 2.1.0)
-
 PATH
   remote: .
   specs:
     skeleton_key (0.1.0)
+      keycloak
 
 GEM
   remote: https://rubygems.org/
@@ -23,6 +15,10 @@ GEM
       domain_name (~> 0.5)
     json (2.3.0)
     jwt (2.2.1)
+    keycloak (3.2.1)
+      json (= 2.3.0)
+      jwt (= 2.2.1)
+      rest-client (= 2.1.0)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2020.0512)
@@ -54,7 +50,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  keycloak!
   rake (~> 12.0)
   rspec (~> 3.0)
   skeleton_key!
