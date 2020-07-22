@@ -55,10 +55,14 @@ RSpec.describe SkeletonKey do
 
     describe '::service_account_user' do
       before do
+        opts = {
+          client_id: nil,
+          client_secret: nil
+        }
         allow(Keycloak::Client).to receive(:get_token_by_client_credentials) do
           {
             access_token: access_token,
-            refresh_token: refresh_token
+            refresh_token: refresh_token,
           }.to_json
         end
       end
@@ -77,18 +81,28 @@ RSpec.describe SkeletonKey do
         ins = described_class.service_account_user
         expect(ins.refresh_token).to eq(refresh_token)
       end
+
+      it 'request credentials with Skeleton key config' do
+        SkeletonKey.configure do |config|
+          config.client_id = 'test'
+          config.client_secret = 'test_secret'
+        end
+
+        described_class.service_account_user
+        expect(Keycloak::Client).to have_received(:get_token_by_client_credentials).with('test', 'test_secret')
+      end
     end
 
     describe '#refresh_token!' do
       before do
-        allow(Keycloak::Client).to receive(:get_token_by_refresh_token).with(refresh_token) do
+        allow(Keycloak::Client).to receive(:get_token_by_refresh_token).with(refresh_token, nil, nil) do
           access_token
         end
       end
 
       it 'calls for Keycloak::Client#get_token_by_refresh_token' do
         ku.refresh_token!
-        expect(Keycloak::Client).to have_received(:get_token_by_refresh_token).with(refresh_token)
+        expect(Keycloak::Client).to have_received(:get_token_by_refresh_token).with(refresh_token, nil, nil)
       end
 
       %w[RestClient::BadRequest NoMethodError].each do |err|
@@ -102,19 +116,19 @@ RSpec.describe SkeletonKey do
 
     describe '#sign_out!' do
       before do
-        allow(Keycloak::Client).to receive(:logout).with('', refresh_token)
+        allow(Keycloak::Client).to receive(:logout).with('', refresh_token, nil, nil)
       end
 
       it 'calls for Keycloak::Client#get_token_by_refresh_token' do
         ku.sign_out!
-        expect(Keycloak::Client).to have_received(:logout).with('', refresh_token)
+        expect(Keycloak::Client).to have_received(:logout).with('', refresh_token, nil, nil)
       end
     end
 
     describe '#info' do
       before do
         allow(Keycloak::Client).to receive(:get_userinfo).with(access_token).and_return({sub: user_id}.to_json)
-        allow(Keycloak::Client).to receive(:user_signed_in?).with(access_token).and_return(true)
+        allow(Keycloak::Client).to receive(:user_signed_in?).with(access_token, nil, nil).and_return(true)
       end
 
       it 'calls for Keycloak::Client#get_userinfo' do
@@ -141,12 +155,12 @@ RSpec.describe SkeletonKey do
 
     describe '#has_role?' do
       before do
-        allow(Keycloak::Client).to receive(:has_role?).with(user_role, access_token)
+        allow(Keycloak::Client).to receive(:has_role?).with(user_role, access_token, nil, nil)
       end
 
       it 'calls for Keycloak::Client.has_role?' do
         ku.has_role?('test')
-        expect(Keycloak::Client).to have_received(:has_role?).with(user_role, access_token)
+        expect(Keycloak::Client).to have_received(:has_role?).with(user_role, access_token, nil, nil)
       end
     end
 

@@ -2,6 +2,7 @@
 
 require 'bundler/setup'
 require 'skeleton_key'
+require 'byebug'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

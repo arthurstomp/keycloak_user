@@ -3,15 +3,23 @@
 require 'skeleton_key/version'
 require 'keycloak'
 require 'json'
+require 'skeleton_key/config'
 
 module SkeletonKey
   class Error < StandardError; end
+  class << self
+    def config
+      @config ||= Config.new
+    end
+    def configure
+      yield @config
+    end
+  end
   class User
     # Patch code
     # TODO: Fix Keycloak gem lib/keycloak.rb:198
     Keycloak.proc_cookie_token = -> {}
 
-    attr_accessor :access_token, :refresh_token
 
     # Authorization header format: "Bearer <access_token>"
     def self.from_headers(headers)
@@ -33,27 +41,43 @@ module SkeletonKey
     end
 
     def self.service_account_user
-      json = Keycloak::Client.get_token_by_client_credentials
+      sk_client_id = SkeletonKey.config.client_id
+      sk_client_secret = SkeletonKey.config.client_secret
+      if sk_client_id && sk_client_secret
+        json = Keycloak::Client.get_token_by_client_credentials(sk_client_id, sk_client_secret)
+      else
+        json = Keycloak::Client.get_token_by_client_credentials
+      end
       full_token = JSON.parse(json, symbolize_names: true)
       access_token = full_token[:access_token]
       refresh_token = full_token[:refresh_token]
-      self.new(access_token, refresh_token)
+      self.new(access_token, refresh_token, client_id: sk_client_id, client_secret: sk_client_secret)
     end
 
-    def initialize(access_token, refresh_token = nil)
+    attr_accessor :access_token, :refresh_token, :client_id, :client_secret
+
+    DEFAULT_OPTS = {
+      client_id: SkeletonKey.config.client_id,
+      client_secret: SkeletonKey.config.client_secret
+    }.freeze
+
+    def initialize(access_token, refresh_token = nil, opts = {})
       @access_token = access_token
       @refresh_token = refresh_token
+      opts.merge!(DEFAULT_OPTS) 
+      @client_id = opts[:client_id]
+      @client_secret = opts[:client_secret]
     end
 
     def refresh_token!
-      self.access_token = Keycloak::Client.get_token_by_refresh_token(refresh_token)
+      self.access_token = Keycloak::Client.get_token_by_refresh_token(refresh_token, client_id, client_secret)
     rescue RestClient::BadRequest, NoMethodError
       self.access_token = nil
     end
 
     def sign_out!
       # Urrghh. maybe better change those params to a hash?
-      Keycloak::Client.logout('', refresh_token)
+      Keycloak::Client.logout('', refresh_token, client_id, client_secret)
     end
 
     def info
@@ -71,12 +95,12 @@ module SkeletonKey
     end
 
     def has_role?(role_name)
-      Keycloak::Client.has_role?(role_name, access_token)
+      Keycloak::Client.has_role?(role_name, access_token, client_id, client_secret)
     end
 
     def signed_in?
       retried ||= false
-      res = Keycloak::Client.user_signed_in?(access_token)
+      res = Keycloak::Client.user_signed_in?(access_token, client_id, client_secret)
       unless res
         raise RuntimeError
       end
